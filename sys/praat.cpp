@@ -76,7 +76,8 @@ static structMelderFolder homeDir { };
 
 /*
  * Melder_preferencesFolder: a folder containing preferences file, buttons file, message files, tracing file, plugins.
- *    Unix:   /home/miep/.praat-dir   (without slash)
+ *    Unix:   /home/miep/.praat-dir   (if this folder already exists, for backward compatibility)
+ *            or $XDG_CONFIG_HOME/praat, else /home/miep/.config/praat
  *    Windows XP/Vista/7/8/10:   \\myserver\myshare\Miep\Praat
  *                         or:   C:\Users\Miep\Praat
  *    MacOS:   /Users/Miep/Library/Preferences/Praat Prefs
@@ -1740,11 +1741,11 @@ static void setPreferencesFolder () {
 	/*
 		Get the app's preferences folder (if not yet set by the --pref-dir option):
 			in Praat 6:
-				"/home/miep/.praat-dir" (Linux)
+				"/home/miep/.praat-dir" (Linux, if this folder already exists)
+				or $XDG_CONFIG_HOME/praat or else "/home/miep/.config/praat" (Linux)
 				"/Users/miep/Library/Preferences/Praat Prefs" (Mac)
 				"C:\Users\Miep\Praat" (Windows)
 			in Praat 7:
-				$XDG_CONFIG_HOME/praat or else "/home/miep/.config/praat" (Linux)
 				"/Users/miep/Library/Application Support/Praat" (Mac)
 				"C:\Users\Miep\AppData\Roaming\Praat" (Windows)
 		and construct a preferences-file name and a script-buttons-file name like
@@ -1779,7 +1780,18 @@ static void setPreferencesFolder () {
 	*/
 	if (MelderFolder_isNull (Melder_preferencesFolder())) {   // not yet set by the --pref-dir option?
 		try {
-			Melder_setPreferencesFolder (MelderFolder_peekPath (Melder_preferencesFolder5()));
+			#if defined (UNIX) && ! defined (macintosh)
+				if (MelderFolder_exists (Melder_preferencesFolder5())) {
+					Melder_setPreferencesFolder (MelderFolder_peekPath (Melder_preferencesFolder5()));
+				} else {
+					Melder_setPreferencesFolder (MelderFolder_peekPath (Melder_preferencesFolder7()));
+					structMelderFolder xdgConfigParent { };
+					MelderFolder_getParentFolder (Melder_preferencesFolder(), & xdgConfigParent);
+					MelderFolder_create (& xdgConfigParent);
+				}
+			#else
+				Melder_setPreferencesFolder (MelderFolder_peekPath (Melder_preferencesFolder5()));
+			#endif
 			MelderFolder_create (Melder_preferencesFolder());
 		} catch (MelderError) {
 			/*

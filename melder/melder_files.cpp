@@ -594,8 +594,14 @@ MelderFolder Melder_preferencesFolder7() {
 			Melder_sprint (thePreferencesFolder7. path,kMelder_MAXPATH+1, homeFolder. path,
 					U"/Library/Application Support/", Melder_upperCaseAppName());
 		#elif defined (UNIX)
-			Melder_sprint (thePreferencesFolder7. path,kMelder_MAXPATH+1, homeFolder. path,
-					U"/.config/", Melder_lowerCaseAppName());
+			const char *xdgConfigHome = getenv ("XDG_CONFIG_HOME");
+			if (xdgConfigHome && xdgConfigHome [0] != '\0') {
+				Melder_sprint (thePreferencesFolder7. path,kMelder_MAXPATH+1,
+						Melder_peek8to32_u (xdgConfigHome), U"/", Melder_lowerCaseAppName());
+			} else {
+				Melder_sprint (thePreferencesFolder7. path,kMelder_MAXPATH+1, homeFolder. path,
+						U"/.config/", Melder_lowerCaseAppName());
+			}
 		#elif defined (_WIN32)
 			Melder_sprint (thePreferencesFolder7. path,kMelder_MAXPATH+1, homeFolder. path,
 					U"\\AppData\\Roaming\\", Melder_upperCaseAppName());
